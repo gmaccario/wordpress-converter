@@ -1,19 +1,31 @@
 <?php
 namespace App\Command;
 
+use App\Service\DataProvider;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Command\LockableTrait;
 
 class WPExportPostsToMarkdownCommand extends Command
 {
+    use LockableTrait;
+
+    protected $logger;
+    protected $dataProvider;
+
     // the name of the command (the part after "bin/console")
     protected static $defaultName = 'app:wp-export-posts';
 
-    /*public function __construct()
+    public function __construct(LoggerInterface $logger, DataProvider $dataProvider)
     {
+        $this->logger = $logger;
+
+        $this->dataProvider = $dataProvider;
+
         parent::__construct();
-    }*/
+    }
 
     protected function configure()
     {
@@ -28,10 +40,22 @@ class WPExportPostsToMarkdownCommand extends Command
       ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output) : int
     {
-        // ...
-        echo "EXPORT!";
+        $this->logger->debug('Execute {commandName}', [
+            'commandName' => self::$defaultName
+        ]);
+
+        if (!$this->lock(get_class($this) . getenv('APP_ENV')))
+        {
+          $output->writeln('<fg=red>The command is already running in another process.</>');
+
+          return 1;
+        }
+
+        $results = $this->dataProvider->getPostsFromWordPress();
+
+        $output->writeln("<fg=green>EXPORT!</>");
 
         return 0;
     }
