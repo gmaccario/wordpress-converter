@@ -63,8 +63,13 @@ class DataProvider
             // $content = $response->getContent();
             // $content = '{"id":521583, "name":"symfony-docs", ...}'
 
-            array_push($items, $response->toArray());
+            // Response per page
+            $pageItems = $response->toArray();
             // $content = ['id' => 521583, 'name' => 'symfony-docs', ...]
+            foreach($pageItems as $pageItem)
+            {
+              array_push($items, $pageItem);
+            }
           }
         }
 

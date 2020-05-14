@@ -20,7 +20,9 @@ class ConverterTest extends KernelTestCase
 
     public function testConvertToMarkDown()
     {
-        $output = $this->service->convertToMarkDown();
+        $items = array();
+
+        $output = $this->service->convertToMarkDown($items);
 
         $this->assertTrue($output);
         //$this->assertIsArray($output);

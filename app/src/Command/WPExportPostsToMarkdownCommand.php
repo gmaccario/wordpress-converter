@@ -2,6 +2,7 @@
 namespace App\Command;
 
 use App\Service\DataProvider;
+use App\Service\Converter;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -13,16 +14,21 @@ class WPExportPostsToMarkdownCommand extends Command
     use LockableTrait;
 
     protected $logger;
+
     protected $dataProvider;
+
+    protected $converter;
 
     // the name of the command (the part after "bin/console")
     protected static $defaultName = 'app:wp-export-posts';
 
-    public function __construct(LoggerInterface $logger, DataProvider $dataProvider)
+    public function __construct(LoggerInterface $logger, DataProvider $dataProvider, Converter $converter)
     {
         $this->logger = $logger;
 
         $this->dataProvider = $dataProvider;
+
+        $this->converter = $converter;
 
         parent::__construct();
     }
@@ -53,9 +59,14 @@ class WPExportPostsToMarkdownCommand extends Command
           return 1;
         }
 
-        $results = $this->dataProvider->getPostsFromWordPress();
+        $items = $this->dataProvider->getPostsFromWordPress();
 
-        $output->writeln("<fg=green>EXPORT!</>");
+        // @todo
+        // $this->listener->save($items)
+
+        $this->converter->convertToMarkDown($items);
+
+        $output->writeln("<fg=green>EXPORTED!</>");
 
         return 0;
     }

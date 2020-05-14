@@ -26,7 +26,7 @@ class WPExportPostsToMarkdownCommandTest extends KernelTestCase
         // the output of the command in the console
         $output = $commandTester->getDisplay();
 
-        $this->assertStringContainsString('EXPORT!', $output);
+        $this->assertStringContainsString('EXPORTED!', $output);
 
         // ...
     }
