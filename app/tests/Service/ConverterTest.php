@@ -24,7 +24,7 @@ class ConverterTest extends KernelTestCase
 
         $output = $this->service->convertToMarkDown($items);
 
-        $this->assertTrue($output);
+        $this->assertFalse($output);
         //$this->assertIsArray($output);
         //$this->assertGreaterThan(0, count($output));
 
