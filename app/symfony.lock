@@ -1,6 +1,6 @@
 {
-    "league/commonmark": {
-        "version": "1.4.3"
+    "league/html-to-markdown": {
+        "version": "4.9.1"
     },
     "monolog/monolog": {
         "version": "2.0.2"
