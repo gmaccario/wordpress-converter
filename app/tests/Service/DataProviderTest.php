@@ -20,6 +20,8 @@ class DataProviderTest extends KernelTestCase
 
     public function testGetPostsFromWordPress()
     {
+        $this->service->setDomain('https://www.sonymusic.com');
+
         $output = $this->service->getPostsFromWordPress();
 
         $this->assertIsArray($output);

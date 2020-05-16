@@ -13,11 +13,13 @@ class WPExportPostsToMarkdownCommandTest extends KernelTestCase
         $kernel = static::createKernel();
         $application = new Application($kernel);
 
-        $command = $application->find('app:wp-export-posts');
+        $command = $application->find('app:wp-converter');
         $commandTester = new CommandTester($command);
         $commandTester->execute([
             // pass arguments to the helper
-            //'username' => 'Wouter',
+             'wp-domain' => 'https://www.sonymusic.com',
+             'conversion-type' => 'posts-to-markdown',
+             'page' => 'page=20',
 
             // prefix the key with two dashes when passing options,
             // e.g: '--some-option' => 'option_value',
