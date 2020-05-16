@@ -1,5 +1,6 @@
 # WordPress Converter
-## Synfony 5 Command application. The purpose of this software is to convert WordPress posts into markdown files using WordPress API.
+## Synfony 5 Command application.
+WordPress Converter allows you to convert WordPress posts to markdown pages using WordPress API.
 
 ### Symfony Commands
 php bin/console --version
@@ -27,14 +28,6 @@ sites.lsa.umich.edu
 ### WordPress endpoints
 * /wp-json/wp/v2/posts
 * /wp-json/wp/v2/pages
-* https://developer.wordpress.org/rest-api/reference/
-* https://developer.wordpress.org/rest-api/reference/posts/
-* https://developer.wordpress.org/rest-api/using-the-rest-api/pagination/
-* https://developer.wordpress.org/rest-api/using-the-rest-api/authentication/
-
-* https://www.unsitoweb.it/indecisi-eccovi-una-lista-di-siti-creati-con-wordpress.html
-* https://www.wired.it/wp-json/wp/v2/posts?page=1
-* https://dillinger.io/
 
 ### Change log
 #### 20200516
