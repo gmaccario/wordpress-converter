@@ -3,17 +3,26 @@ namespace App\Service;
 
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 class DataProvider
 {
     private $logger;
     private $domain;
 
+    protected $errors = array();
+
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
 
         $this->domain = $_ENV['APP_WP_DOMAIN'];
+    }
+
+    public function getErrors() : array
+    {
+        return $this->errors;
     }
 
     /**
@@ -30,7 +39,18 @@ class DataProvider
 
         $items = array();
 
+        $output = new ConsoleOutput();
+
         $totalPosts = $this->getTotalPosts();
+
+        if(!isset($totalPosts['wp-total-posts']))
+        {
+          $output->writeln('<fg=red>The website doesn\'t look like a WordPress website.</>' . PHP_EOL);
+
+          $this->logger->debug("The website doesn't look like a WordPress website.");
+
+          return $items;
+        }
 
         $posts = intval($totalPosts['wp-total-posts']);
         $pages = intval($totalPosts['wp-total-pages']);
@@ -43,35 +63,70 @@ class DataProvider
             'perPage' => $perPage,
         ]);
 
+        $output->writeln('<info>Loop over the pages</info>' . PHP_EOL);
+
+        // Progress bar
+        $progressBar = new ProgressBar($output, $pages);
+        $progressBar->start();
+
+        // Loop over the pages
         for($i=1; $i<=$pages; $i++)
         {
+          $headers = null;
+
           $client = HttpClient::create();
 
           $url = sprintf('%s/wp-json/wp/v2/posts?page=%s', $this->domain, $i);
 
           $this->logger->debug($url);
 
-          $response = $client->request('GET', $url);
+          try {
 
-          $statusCode = $response->getStatusCode();
+            $response = $client->request('GET', $url);
+
+            $headers = $response->getHeaders();
+
+            $statusCode = $response->getStatusCode();
+
+          } catch (\Throwable $e) {
+
+             array_push($this->errors, array(
+              'page' => $i,
+              // 'status' => $response->getStatusCode(),
+              'url' => $url,
+              'error' => $e,
+             ));
+
+             $progressBar->advance();
+
+             continue;
+          }
 
           if($statusCode == 200)
           {
-            $contentType = $response->getHeaders()['content-type'][0];
+            $contentType = $headers['content-type'][0];
             // $contentType = 'application/json'
 
             // $content = $response->getContent();
             // $content = '{"id":521583, "name":"symfony-docs", ...}'
 
-            // Response per page
-            $pageItems = $response->toArray();
+            // Items per page
+            $posts = $response->toArray();
             // $content = ['id' => 521583, 'name' => 'symfony-docs', ...]
-            foreach($pageItems as $pageItem)
+            foreach($posts as $pageItem)
             {
               array_push($items, $pageItem);
             }
           }
+
+          $progressBar->advance();
         }
+
+        $progressBar->finish();
+
+        $this->logger->debug("Erros", [
+            'errors' => json_encode($this->errors),
+        ]);
 
         $this->logger->debug("Total Items fetched: {totalFetched}", [
             'totalFetched' => count($items),
@@ -100,10 +155,16 @@ class DataProvider
       {
         $this->logger->debug(json_encode($response->getHeaders()));
 
-        return array(
-          'wp-total-posts' => $response->getHeaders()['x-wp-total'][0],
-          'wp-total-pages' => $response->getHeaders()['x-wp-totalpages'][0],
-        );
+        if(!isset($response->getHeaders()['x-wp-total']))
+        {
+          return array();
+        }
+        else {
+          return array(
+            'wp-total-posts' => $response->getHeaders()['x-wp-total'][0],
+            'wp-total-pages' => $response->getHeaders()['x-wp-totalpages'][0],
+          );
+        }
       }
 
       return array();

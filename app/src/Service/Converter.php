@@ -6,6 +6,8 @@ use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use League\HTMLToMarkdown\HtmlConverter;
 
 class Converter
@@ -39,15 +41,29 @@ class Converter
 
         $time_start = microtime(true);
 
-        // @todo as a service in the constructor?
+        $output = new ConsoleOutput();
+
         $converter = new HtmlConverter();
 
-        $path = sprintf('%s/var/markdown', $this->kernel->getProjectDir());
+        $parseUrl = parse_url($_ENV['APP_WP_DOMAIN']);
+
+        $path = sprintf('%s/var/markdown/%s', $this->kernel->getProjectDir(), (isset($parseUrl['host']) ? $parseUrl['host'] : $parseUrl['path']));
+
+        $this->logger->debug("Path: {path}", [
+            'path' => $path,
+        ]);
 
         if(!$this->filesystem->exists($path))
         {
           $this->filesystem->mkdir($path);
         }
+
+        $output->writeln(PHP_EOL);
+        $output->writeln('<info>Loop over the items</info>' . PHP_EOL);
+
+        // Progress bar
+        $progressBar = new ProgressBar($output, count($items));
+        $progressBar->start();
 
         // Loop over the items
         foreach($items as $item)
@@ -66,16 +82,24 @@ class Converter
           $filepath = sprintf('%s/%s.md', $path, $slug);
 
           // Store on file
-          $this->filesystem->appendToFile($filepath, $titleMD);
-          $this->filesystem->appendToFile($filepath, $contentMD);
-          $this->filesystem->appendToFile($filepath, $excerptMD);
+          $this->filesystem->appendToFile($filepath, $titleMD . PHP_EOL);
+          // $this->filesystem->appendToFile($filepath, $excerptMD . PHP_EOL);
+          $this->filesystem->appendToFile($filepath, strip_tags($contentMD) . PHP_EOL);
 
-          $this->logger->debug("Title {title} | Content: {content} | Excerpt: {excerpt}", [
+          $this->logger->debug("slug {slug}", [
+              'slug' => $slug,
+          ]);
+
+          $progressBar->advance();
+
+          /*$this->logger->debug("Title {title} | Content: {content} | Excerpt: {excerpt}", [
               'title' => $titleMD,
               'content' => $contentMD,
               'excerpt' => $excerptMD,
-          ]);
+          ]);*/
         }
+
+        $progressBar->finish();
 
         $time_end = microtime(true);
 

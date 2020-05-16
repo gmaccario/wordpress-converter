@@ -48,9 +48,13 @@ class WPExportPostsToMarkdownCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output) : int
     {
+        $this->logger->debug('======================================');
         $this->logger->debug('Execute {commandName}', [
             'commandName' => self::$defaultName
         ]);
+
+        // @todo Input arguments
+        //$text = $input->getArgument('name');
 
         if (!$this->lock(get_class($this) . getenv('APP_ENV')))
         {
@@ -61,12 +65,35 @@ class WPExportPostsToMarkdownCommand extends Command
 
         $items = $this->dataProvider->getPostsFromWordPress();
 
+        if(count($this->dataProvider->getErrors()) > 0)
+        {
+          $output->writeln(PHP_EOL);
+          $output->writeln('<fg=red>Error occurred, check the log (if activated!).</>');
+
+          foreach($this->dataProvider->getErrors() as $index => $error)
+          {
+            $this->logger->debug('Error occurred at page  {page} | {url} | {error}', [
+                'page' => $error['page'],
+                'url' => $error['url'],
+                'error' => json_encode($error),
+            ]);
+          }
+        }
+
         // @todo
-        // $this->listener->save($items)
+        // $this->listener->store($items)
 
-        $this->converter->convertToMarkDown($items);
+        if(count($items) > 0)
+        {
+          $this->converter->convertToMarkDown($items);
 
-        $output->writeln("<fg=green>EXPORTED!</>");
+          $output->writeln(PHP_EOL);
+          $output->writeln(sprintf("<fg=green>Exported %s items successfully!</>", count($items)));
+        }
+        else{
+          $output->writeln(PHP_EOL);
+          $output->writeln(sprintf("<fg=cyan>No items to export.</>", count($items)));
+        }
 
         return 0;
     }
