@@ -6,23 +6,13 @@ use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
-class DataProvider
+class DataProvider extends BasicService
 {
     private $logger;
-    private $domain;
-
-    protected $errors = array();
 
     public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
-
-        $this->domain = $_ENV['APP_WP_DOMAIN'];
-    }
-
-    public function getErrors() : array
-    {
-        return $this->errors;
     }
 
     /**
@@ -33,7 +23,25 @@ class DataProvider
      *
      * @return array
      */
-    public function getPostsFromWordPress() : array
+    public function getPostsFromWordPress(string $page = null) : array
+    {
+      if(!empty($page))
+      {
+        return $this->getPostsFromWordPressPerPage($page);
+      }
+
+      return $this->getPostsFromWordPressAll();
+    }
+
+    /**
+     *
+     * 1. Get the total
+     * 2. Loop over the posts per page based on X-WP-Total header
+     * 3. Push items into an array
+     *
+     * @return array
+     */
+    private function getPostsFromWordPressAll() : array
     {
         $time_start = microtime(true);
 
@@ -141,6 +149,91 @@ class DataProvider
         ]);
 
         return $items;
+    }
+
+    /**
+     *
+     * @return array
+     */
+    private function getPostsFromWordPressPerPage(string $page) : array
+    {
+      $time_start = microtime(true);
+
+      $items = array();
+
+      $output = new ConsoleOutput();
+
+      $output->writeln('<info>Inspect the page</info>' . PHP_EOL);
+
+      // Progress bar
+      $progressBar = new ProgressBar($output, 1);
+      $progressBar->start();
+
+      // Inspect the page
+      $headers = null;
+
+      $client = HttpClient::create();
+
+      $url = sprintf('%s/wp-json/wp/v2/posts?%s', $this->domain, $page);
+
+      $this->logger->debug($url);
+
+      try {
+
+        $response = $client->request('GET', $url);
+
+        $headers = $response->getHeaders();
+
+        $statusCode = $response->getStatusCode();
+
+      } catch (\Throwable $e) {
+
+         array_push($this->errors, array(
+          'page' => $page,
+          // 'status' => $response->getStatusCode(),
+          'url' => $url,
+          'error' => $e,
+         ));
+      }
+
+      if($statusCode == 200)
+      {
+        $contentType = $headers['content-type'][0];
+        // $contentType = 'application/json'
+
+        // $content = $response->getContent();
+        // $content = '{"id":521583, "name":"symfony-docs", ...}'
+
+        // Items per page
+        $posts = $response->toArray();
+        // $content = ['id' => 521583, 'name' => 'symfony-docs', ...]
+        foreach($posts as $pageItem)
+        {
+          array_push($items, $pageItem);
+        }
+      }
+
+      $progressBar->advance();
+
+      $progressBar->finish();
+
+      $this->logger->debug("Erros", [
+          'errors' => json_encode($this->errors),
+      ]);
+
+      $this->logger->debug("Total Items fetched: {totalFetched}", [
+          'totalFetched' => count($items),
+      ]);
+
+      $time_end = microtime(true);
+
+      $execution_time = ($time_end - $time_start) / 60;
+
+      $this->logger->debug("Execution time (mins): {mins}", [
+          'mins' => $execution_time,
+      ]);
+
+      return $items;
     }
 
     private function getTotalPosts() : array

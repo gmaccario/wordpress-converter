@@ -10,15 +10,13 @@ use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use League\HTMLToMarkdown\HtmlConverter;
 
-class Converter
+class Converter extends BasicService
 {
     private $logger;
-
     private $filesystem;
-
     private $kernel;
 
-    public function __construct(KernelInterface $kernel, LoggerInterface $logger, Filesystem $filesystem)
+    public function __construct(LoggerInterface $logger, KernelInterface $kernel, Filesystem $filesystem)
     {
         $this->logger = $logger;
 
@@ -45,7 +43,7 @@ class Converter
 
         $converter = new HtmlConverter();
 
-        $parseUrl = parse_url($_ENV['APP_WP_DOMAIN']);
+        $parseUrl = parse_url($this->domain);
 
         $path = sprintf('%s/var/markdown/%s', $this->kernel->getProjectDir(), (isset($parseUrl['host']) ? $parseUrl['host'] : $parseUrl['path']));
 

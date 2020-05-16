@@ -7,9 +7,10 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Command\LockableTrait;
 
-class WPExportPostsToMarkdownCommand extends Command
+class WordPressConverterCommand extends Command
 {
     use LockableTrait;
 
@@ -20,7 +21,7 @@ class WPExportPostsToMarkdownCommand extends Command
     protected $converter;
 
     // the name of the command (the part after "bin/console")
-    protected static $defaultName = 'app:wp-export-posts';
+    protected static $defaultName = 'app:wp-converter';
 
     public function __construct(LoggerInterface $logger, DataProvider $dataProvider, Converter $converter)
     {
@@ -42,7 +43,11 @@ class WPExportPostsToMarkdownCommand extends Command
           // the full command description shown when running the command with
           // the "--help" option
           ->setHelp('This command allows you to export WordPress posts to markdown files.')
-          // ->addArgument('password', $this->requirePassword ? InputArgument::REQUIRED : InputArgument::OPTIONAL, 'User password')
+
+          ->addArgument('wp-domain', InputArgument::REQUIRED, 'WordPress domain')
+          // conversionType: posts-to-markdown, ...
+          ->addArgument('conversion-type', InputArgument::REQUIRED, 'Conversion type: posts-to-markdown, ...')
+          ->addArgument('page', InputArgument::OPTIONAL, 'Page to inspect (page=19).')
       ;
     }
 
@@ -53,8 +58,13 @@ class WPExportPostsToMarkdownCommand extends Command
             'commandName' => self::$defaultName
         ]);
 
-        // @todo Input arguments
-        //$text = $input->getArgument('name');
+        // Get input arguments
+        $conversionType = $input->getArgument('conversion-type');
+        $wpDomain = $input->getArgument('wp-domain');
+        $page = $input->getArgument('page');
+
+        $this->dataProvider->setDomain($wpDomain);
+        $this->converter->setDomain($wpDomain);
 
         if (!$this->lock(get_class($this) . getenv('APP_ENV')))
         {
@@ -63,7 +73,16 @@ class WPExportPostsToMarkdownCommand extends Command
           return 1;
         }
 
-        $items = $this->dataProvider->getPostsFromWordPress();
+        $items = array();
+
+        switch($conversionType)
+        {
+            case 'posts-to-markdown':
+              $items = $this->dataProvider->getPostsFromWordPress($page);
+              break;
+            default:
+              break;
+        }
 
         if(count($this->dataProvider->getErrors()) > 0)
         {
