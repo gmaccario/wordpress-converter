@@ -60,7 +60,7 @@ class WordPressConverterCommand extends Command
 
         // Get input arguments
         $conversionType = $input->getArgument('conversion-type');
-        $wpDomain = $input->getArgument('wp-domain');
+        $wpDomain = $this->addScheme($input->getArgument('wp-domain'));
         $page = $input->getArgument('page');
 
         $this->dataProvider->setDomain($wpDomain);
@@ -115,5 +115,10 @@ class WordPressConverterCommand extends Command
         }
 
         return 0;
+    }
+
+    private function addScheme(string $url, string $scheme = 'http://') : string
+    {
+      return parse_url($url, PHP_URL_SCHEME) === null ? $scheme . $url : $url;
     }
 }
