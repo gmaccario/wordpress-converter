@@ -24,7 +24,7 @@ composer install
 * php bin/console cache:clear
 * php bin/console debug:autowiring
 
-### PUPUNIT
+### PHPUNIT
 * php bin/phpunit
 * php bin/phpunit tests/Command/WPExportPostsToMarkdownCommandTest
 * php bin/phpunit tests/Service/DataProviderTest
