@@ -7,7 +7,7 @@ WordPress Converter allows you to convert WordPress posts to markdown pages usin
 git clone https://github.com/gmaccario/wordpress-converter.git wordpress-converter
 cd wordpress-converter
 docker-compose up -d
-docker exec -it wordpress-export-post-to-markdown-php /bin/bash
+docker exec -it wordpress-converter-php /bin/bash
 composer install
 ```
 
