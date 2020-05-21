@@ -53,6 +53,15 @@ class WordPressConverterCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output) : int
     {
+        if (!$this->lock(get_class($this) . getenv('APP_ENV')))
+        {
+          $this->logger->debug('The command is already running in another process', []);
+
+          $output->writeln('<fg=red>The command is already running in another process.</>');
+
+          return 1;
+        }
+
         $this->logger->debug('======================================');
         $this->logger->debug('Execute {commandName}', [
             'commandName' => self::$defaultName
@@ -65,13 +74,6 @@ class WordPressConverterCommand extends Command
 
         $this->dataProvider->setDomain($wpDomain);
         $this->converter->setDomain($wpDomain);
-
-        if (!$this->lock(get_class($this) . getenv('APP_ENV')))
-        {
-          $output->writeln('<fg=red>The command is already running in another process.</>');
-
-          return 1;
-        }
 
         $items = array();
 
