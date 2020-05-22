@@ -109,7 +109,7 @@ class WordPressConverterCommand extends Command
           $this->converter->convertToMarkDown($items);
 
           $output->writeln(PHP_EOL);
-          $output->writeln(sprintf("<fg=green>Exported %s items successfully!</>", count($items)));
+          $output->writeln(sprintf("<fg=green>Converted %s items successfully!</>", count($items)));
         }
         else{
           $output->writeln(PHP_EOL);
